@@ -1,0 +1,484 @@
+---
+title: "HonorsThesisCode"
+author: "GMF"
+date: "2024-03-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages("vegan",
+              # "tidyverse")
+
+library("ggplot2", "dplyr")
+
+
+```
+
+```{r}
+print(mastersheet)
+```
+
+```{r data.prep}
+mastersheet <- read.csv('/Users/gwen/Downloads/BeanDom_Symbio-SP24-MasterData.csv')
+
+ncci<-read.csv('/Users/gwen/Downloads/BeanDom_Symbio-SP24-MasterData-Ncci.csv')
+
+wbodata<-read.csv("/Users/gwen/Downloads/BeanDom_Symbio-WBO.csv")
+wbtdata<-read.csv("/Users/gwen/Downloads/BeanDom_Symbio-WBT.csv")
+btsdata<-read.csv("/Users/gwen/Downloads/BeanDom_Symbio-BTS.csv")
+
+cciharvestdata<-read.csv("/Users/gwen/Downloads/MasterData-ELD-CAY.csv")
+```
+
+```{r x}
+
+rootshootvsnod<-ggplot(mastersheet, aes(x=RootShoot.Ratio, y=Nodule.Number, shape=Genotype, color=Nitrogen.Treatment)) +
+  geom_point() + 
+  geom_smooth(model=lm, se=TRUE) +
+  xlim(0, 6)+
+  labs(title="Root:Shoot Ratio versus Nodule Number at Harvest",
+       x="Root:Shoot Ratio",
+       y= "Nodule Count",
+       shape="Accession",
+       color="Nitrogen Treatment")
+
+print(rootshootvsnod)
+
+
+#more aboveground biomass means more nodules?
+#looking at relationship between nodule number and rootshoot with confounding N #treatment
+
+aov1<-aov(Nodule.Number~RootShoot.Ratio*Nitrogen.Treatment, data=mastersheet)
+summary(aov1)
+
+#                   ################ Df Sum Sq Mean Sq F value  Pr(>F)   
+#RootShoot.Ratio                     1  83564   83564   8.508 0.00606 **
+#Nitrogen.Treatment                  1  39874   39874   4.060 0.05144 . 
+#RootShoot.Ratio:Nitrogen.Treatment  1   8069    8069   0.822 0.37077   
+#Residuals                          36 353601    9822                   
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#Nodule number is more significantly influenced by rootshoot than n treatment
+
+aovone<-aov(Nodule.Number~RootShoot.Ratio, data=mastersheet)
+summary(aovone)
+
+###################Df Sum Sq Mean Sq F value  Pr(>F)   
+#RootShoot.Ratio  1  83564   83564   7.908 0.00774 **
+#Residuals       38 401544   10567                   
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+```
+
+```{r y}
+
+rootshootvsage<-ggplot(mastersheet, aes(x=Harvest.Day.Age, y=RootShoot.Ratio, group=Nitrogen.Treatment)) +
+  geom_point(aes(shape = Nitrogen.Treatment, color = Nitrogen.Treatment)+ 
+  stat_smooth(method=lm, se=TRUE))
+  
+print(rootshootvsage)
+
+#Nitrogen treatment is somewhat significant when comparing age vs rootshoot, but more significant is rootshoot to age. Second anova revealed that nitrogen treatment was more correlated to rootshoot than type
+
+aov2<-aov(Harvest.Day.Age~RootShoot.Ratio, data=mastersheet)
+summary(aov2)
+
+#looking at relationship between age and rootshoot to see if this is independent of nitrogen treatment
+
+#Just root:shoot and age
+#               Df Sum Sq Mean Sq F value  Pr(>F)   
+#RootShoot.Ratio  1  33.92   33.92   12.51 0.00109 **
+#Residuals       38 103.06    2.71                   
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#somewhat significant relationship between rootshoot and age
+
+#RootShoot vs Age with nitrogen treatment
+#                                   Df Sum Sq Mean Sq F value   Pr(>F)    
+#RootShoot.Ratio                     1  33.92   33.92  14.461 0.000534 ***
+#Nitrogen.Treatment                  1   2.84    2.84   1.210 0.278565    
+#RootShoot.Ratio:Nitrogen.Treatment  1  15.79   15.79   6.733 0.013610 *  
+#Residuals                          36  84.43    2.35                     
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#RootShoot vs Age with nitrogen treatment and with Type
+#                                        Df Sum Sq Mean Sq F value   Pr(>F)    
+#RootShoot.Ratio                          1  33.92   33.92  45.611 1.25e-07 ***
+#Nitrogen.Treatment                       1   2.84    2.84   3.818  0.05951 .  
+#Type                                     1  57.54   57.54  77.379 4.74e-10 ***
+#RootShoot.Ratio:Nitrogen.Treatment       1   8.86    8.86  11.917  0.00158 ** 
+#RootShoot.Ratio:Type                     1   3.97    3.97   5.336  0.02749 *  
+#Nitrogen.Treatment:Type                  1   5.53    5.53   7.438  0.01028 *  
+#RootShoot.Ratio:Nitrogen.Treatment:Type  1   0.53    0.53   0.710  0.40565    
+#Residuals                               32  23.79    0.74                     
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+```
+
+```{r z}
+
+agevvolume<-ggplot(mastersheet, aes(x=Harvest.Day.Age, y=Volume.mm3))+
+  geom_point()+
+  stat_smooth(method=lm, se=TRUE)
+
+print(agevvolume)
+
+vol<-aov(Harvest.Day.Age~Volume.mm3*Type*Nitrogen.Treatment, data=mastersheet)
+summary(vol)
+
+```
+
+```{r a}
+
+genovsage<-ggplot(mastersheet, aes(x=Genotype, y=Nodule.Number, fill=Nitrogen.Treatment)) +
+  geom_boxplot(notch=FALSE)+
+  labs(title="Genotype versus Nodule Number",
+       x="Bean Genotype",
+       y= "Nodule Count")
+
+genovsage + coord_flip()
+  
+
+print(genovsage)
+
+#save coord_flip version -clearer
+#add significance tests/anova into main code
+
+NodNApp<-aov(Nodule.Number~Genotype*Nitrogen.Treatment, data=mastersheet)
+summary(NodNApp)
+
+TukeyHSD(NodNApp)
+#below 0.05 is significant
+```
+
+```{r Figure:NodGeno}
+
+
+
+NodGeno<-aov(Nodule.Number~Genotype*Nitrogen.Treatment, data=mastersheet)
+summary(NodGeno)
+
+TukeyHSD(NodGeno)
+  
+#add that N v Y signifies nitrogen treatment in the legend
+#saved
+```
+
+```{r Figure:RSGeno}
+
+
+
+rsGeno<-aov(RootShoot.Ratio~Genotype*Nitrogen.Treatment, data=mastersheet)
+summary(rsGeno)
+
+TukeyHSD(rsGeno)
+
+```
+
+```{r b}
+
+ccivsn<-ggplot(ncci, aes(x=Time, y=CCI, group=Time, fill=molKNO3)) +
+  geom_boxplot()+
+  labs(title="Relationship between CCI and KNO3 Addition (mol) by Lineage Type",
+       x="Time Point",
+       y="Average Plant CCI",
+       fill="Moles of KNO3 in Latest Application")+
+  facet_wrap(~Type)
+
+print(ccivsn)
+
+NFixNApp<-aov(CCI~molKNO3*Type, data=ncci)
+summary(NFixNApp)
+
+TukeyHSD(NFixNApp)
+#make boxplot instead
+#saved
+```
+
+```{r Figure:NodNFix}
+
+#nodvscci<-ggplot(mastersheet, aes(x=Time.3.CCI, y=Nodule.Number, group=Type)) +
+ # geom_point(aes(color=Nitrogen.Treatment, shape=Genotype)) + 
+  #geom_smooth(method=lm, se=TRUE) +
+  #labs(title="Nodule Number versus CCI at Harvest",
+      # x="Harvest CCI",
+      # y= "Nodule Count",
+      # group="Lineage Type",
+      # color="Nitrogen Treatment")
+#print(nodvscci)
+
+NodNFix<-aov(Nodule.Number~Time.3.CCI, data=mastersheet)
+summary(NodNFix)
+
+nodvcci<-ggplot(mastersheet, aes(x=Time.3.CCI, y=Nodule.Number))+
+  geom_point(aes(color=Genotype,shape=Nitrogen.Treatment))+
+  geom_smooth(method=lm, se=TRUE)+
+  labs(title="Reationship between Nodule Number and CCI at Harvest",
+       x="Average Plant CCI at Harvest",
+       y="Nodule Count by Plant",
+       group="Bean Genotype",
+       shape="Nitrogen Treatment")
+print(nodvcci)
+
+nodvccibox<-ggplot(mastersheet, aes(x=Time.3.CCI, y=Nodule.Number, group=Genotype))+
+  geom_boxplot(aes(color=Genotype,shape=Nitrogen.Treatment))+
+  geom_smooth(method=lm, se=TRUE)+
+  labs(title="Reationship between Nodule Number and CCI at Harvest by Genotype",
+       x="Average Plant CCI at Harvest",
+       y="Nodule Count by Plant",
+       group="Bean Genotype",
+       shape="Nitrogen Treatment")
+print(nodvcci)
+#saved
+```
+
+```{r other anovas}
+
+nodulationbygeno<-aov(Nodule.Number~Genotype*Harvest.Day.Age, data=mastersheet)
+summary(nodulationbygeno)
+
+#                         Df Sum Sq Mean Sq F value   Pr(>F)    
+#Genotype                  4 247910   61978   8.759 7.49e-05 ***
+#Harvest.Day.Age           1  10747   10747   1.519    0.227    
+#Genotype:Harvest.Day.Age  3   7088    2363   0.334    0.801    
+#Residuals                31 219362    7076                     
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#p=[0.00, 0.001] when ***
+#Significant that genotype influences nodule number
+
+ccibyn<-aov(CCI~molKNO3*Day.Age, data=ncci)
+summary(ccibyn)
+
+#                Df Sum Sq Mean Sq F value   Pr(>F)    
+#molKNO3          2  149.6   74.81   4.748 0.013239 *  
+#Day.Age          1  245.7  245.74  15.598 0.000261 ***
+#molKNO3:Day.Age  2    2.7    1.34   0.085 0.918669    
+#Residuals       47  740.5   15.75                     
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#1 observation deleted due to missingness
+#Day age at time of CCI collection influences avg CCI reading more than
+#mol of KNO3 last applied before data were taken
+
+nodulenumber<-aov(Nodule.Number~Type+Nitrogen.Treatment, data=mastersheet)
+summary(nodulenumber)
+
+#                  Df Sum Sq Mean Sq F value   Pr(>F)    
+#Type                1 163746  163746  20.730 5.56e-05 ***
+#Nitrogen.Treatment  1  29096   29096   3.683   0.0627 .  
+#Residuals          37 292265    7899                     
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#Wild vs domesticated is significant in nodule number more so than nitrogen treatment
+
+ccinodnapp<-aov(Nodule.Number~Time.3.CCI*Nitrogen.Treatment*Type, data=mastersheet)
+summary(ccinodnapp)
+
+TukeyHSD(ccinodnapp)
+```
+
+```{r Figure:geno or N on CCI}
+
+CCINgeno<-ggplot(mastersheet, aes(x=Genotype, y=Time.1.CCI, fill=Nitrogen.Treatment)) +
+  geom_boxplot()+
+  labs(title="A) Differences in CCI at Time Point 1 by Bean Genotype",
+       x="Bean Genotype",
+       y="CCI at Time Point 1",
+       fill="Nitrogen Treatment")
+print(CCINgeno)
+
+CCINgeno2<-ggplot(mastersheet, aes(x=Genotype, y=Time.2.CCI, fill=Nitrogen.Treatment)) +
+  geom_boxplot()+
+  labs(title="B) Differences in CCI at Time Point 2 by Bean Genotype",
+       x="Bean Genotype",
+       y="CCI at Time Point 2",
+       fill="Nitrogen Treatment")
+print(CCINgeno2)
+
+
+
+```
+
+```{r ccigeno}
+
+cgt1<- aov(Time.1.CCI~Genotype*Nitrogen.Treatment, data=mastersheet)
+summary(cgt1)
+
+cgt2<- aov(Time.2.CCI~Genotype*Nitrogen.Treatment, data=mastersheet)
+summary(cgt2)
+
+cgtH<- aov(Time.3.CCI~Genotype*Nitrogen.Treatment, data=mastersheet)
+summary(cgtH)
+
+```
+
+```{r shoot}
+
+shoot<-ggplot(mastersheet, aes(x=Above.Ground.Biomass.g, y=Time.3.CCI, group=Genotype))+
+  geom_point(aes(color=Genotype))+
+  geom_smooth(method=lm, se=TRUE)
+
+
+print(shoot)
+
+```
+
+```{r nod-biomass}
+nodbio<-ggplot(mastersheet, aes(x=Nodule.Number, y=RootShoot.Ratio, group=Nitrogen.Treatment))+
+  geom_point(aes(color=Genotype))+
+  geom_smooth(model=lm, se=TRUE)
+print(nodbio)
+
+nodbgb<-ggplot(mastersheet, aes(x=Nodule.Number, y=Below.Ground.Biomass.g, group=Nitrogen.Treatment))+
+  geom_point(aes(color=Genotype))+
+  geom_smooth(method=lm, se=TRUE)
+print(nodbgb)
+
+```
+
+```{r individual vs cci}
+WBOcci<-ggplot(wbodata, aes(x=Time.3.CCI, y=Nodule.Number))+
+  geom_point(aes(color=Nitrogen.Treatment))+
+  geom_smooth(method=lm, se=TRUE)+
+  labs(title="A) Relationship between Nodule Number and CCI at Harvest in WBO",
+       x="Average Plant CCI at Harvest",
+       y="Nodule Count by Plant",
+       group="Nitrogen Treatment")
+print(WBOcci)
+
+WBTcci<-ggplot(wbtdata, aes(x=Time.3.CCI, y=Nodule.Number))+
+  geom_point(aes(color=Nitrogen.Treatment))+
+  geom_smooth(method=lm, se=TRUE)+
+  labs(title="B) Relationship between Nodule Number and CCI at Harvest in WBT",
+       x="Average Plant CCI at Harvest",
+       y="Nodule Count by Plant",
+       group="Nitrogen Treatment")
+print(WBTcci)
+
+BTScci<-ggplot(btsdata, aes(x=Time.3.CCI, y=Nodule.Number))+
+  geom_point(aes(color=Nitrogen.Treatment))+
+  geom_smooth(method=lm, se=TRUE)+
+  labs(title="C) Relationship between Nodule Number and CCI at Harvest in BTS",
+       x="Average Plant CCI at Harvest",
+       y="Nodule Count by Plant",
+       group="Nitrogen Treatment")
+print(BTScci)
+
+
+
+```
+
+```{r nodcci}
+
+wbonc<-aov(Nodule.Number~Time.3.CCI*Nitrogen.Treatment, data=wbodata)
+summary(wbonc)
+
+TukeyHSD(wbonc)
+
+wbtnc<-aov(Nodule.Number~Time.3.CCI*Nitrogen.Treatment, data=wbtdata)
+summary(wbtnc)
+
+TukeyHSD(wbtnc)
+
+btsnc<-aov(Nodule.Number~Time.3.CCI*Nitrogen.Treatment, data=btsdata)
+summary(btsnc)
+TukeyHSD(btsnc)
+
+allnc<-aov(Nodule.Number~Time.3.CCI*Nitrogen.Treatment*Genotype, data=mastersheet)
+summary(allnc)
+TukeyHSD(allnc)
+```
+
+```{r volume geno age}
+vga<-aov(Volume.mm3~Harvest.Day.Age*Genotype*Nitrogen.Treatment, data=mastersheet)
+summary(vga)
+
+TukeyHSD(vga)
+```
+
+```{r RSNods}
+
+
+```
+
+```{r FINAL FIGURES}
+
+#1
+typevsnods<-ggplot(mastersheet, aes(x=Type, y=Nodule.Number, fill=Genotype)) +
+  geom_boxplot(notch=FALSE)+
+  facet_wrap(~Nitrogen.Treatment)+
+  labs(title="Differences in Nodule Number at Harvest by Accession",
+       x="Lineage Type",
+       y="Nodule Count",
+       fill="Accession")
+print(typevsnods)
+
+#tvn<-aov(Nodule.Number~Genotype*Nitrogen.Treatment, data=mastersheet)
+#summary(tvn)
+#TukeyHSD(tvn)
+
+#2
+RSgeno<-ggplot(mastersheet, aes(x=Type, y=RootShoot.Ratio, fill=Genotype)) +
+  geom_boxplot(notch=FALSE)+
+  facet_wrap(~Nitrogen.Treatment)+
+  labs(title="Differences in Root:Shoot Ratio at Harvest by Accession",
+       x="Lineage Type",
+       y="Root:Shoot Dry Mass Ratio",
+       fill="Accession")
+print(RSgeno)
+
+#rg<-aov(RootShoot.Ratio~Genotype*Nitrogen.Treatment, data=mastersheet)
+#summary(rg)
+#TukeyHSD(rg)
+
+#3
+CCINgeno3<-ggplot(cciharvestdata, aes(x=Genotype, y=Time.3.CCI, fill=Nitrogen.Treatment)) +
+  geom_boxplot()+
+  labs(title="Differences in CCI at Harvest by Accession",
+       x="Accession",
+       y="CCI at Harvest",
+       fill="Nitrogen Treatment")
+print(CCINgeno3)
+
+#cng<-aov(Time.3.CCI~Genotype*Nitrogen.Treatment, data=cciharvestdata)
+#summary(cng)
+#TukeyHSD(cng)
+
+#4
+nodvcci<-ggplot(mastersheet, aes(x=Time.3.CCI, y=Nodule.Number))+
+  geom_point(aes(color=Genotype,shape=Nitrogen.Treatment))+
+  geom_smooth(method=lm, se=TRUE)+
+  labs(title="Relationship between Nodule Number and CCI at Harvest Across Accessions",
+       x="Average Plant CCI at Harvest",
+       y="Nodule Count by Plant",
+       color="Accession",
+       shape="Nitrogen Treatment")
+print(nodvcci)
+
+#nvc<-aov(Nodule.Number~Time.3.CCI*Genotype*Nitrogen.Treatment, data=mastersheet)
+#summary(nvc)
+#TukeyHSD(nvc, which="Genotype")
+
+#5
+RSnods<-ggplot(mastersheet, aes(x=RootShoot.Ratio, y=Nodule.Number))+
+  geom_point(aes(color=Genotype,shape=Nitrogen.Treatment))+
+  geom_smooth(method=lm, se=TRUE)+
+  labs(title="Relationship between Nodule Number and Root:Shoot Ratio Across Accessions",
+       x="Root:Shoot Ratio",
+       y="Nodule Count by Plant",
+       color="Accession",
+       shape="Nitrogen Treatment")
+print(RSnods)
+
+rn<-aov(Nodule.Number~RootShoot.Ratio*Genotype*Nitrogen.Treatment, data=mastersheet)
+summary(rn)
+TukeyHSD(rn, which="Nitrogen.Treatment")
+
+```
+
